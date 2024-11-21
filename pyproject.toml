@@ -1,0 +1,120 @@
+[tool.poetry]
+name = "dify-oapi"
+version = "0.0.2"
+description = "A package for interacting with the Dify Service-API"
+authors = ["QiMington <qimington@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+keywords = ["dify", "nlp", "ai", "language-processing"]
+homepage = 'https://github.com/QiMington/dify-oapi'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.urls]
+repository = 'https://github.com/QiMington/dify-oapi'
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "site-packages",
+    "venv",
+]
+
+line-length = 120
+indent-width = 4
+
+[tool.ruff.lint]
+select = [
+    "A",  # flake8-annotations
+    "B", # flake8-bugbear rules
+    "F", # pyflakes rules
+    "N",  #  name style rules
+    "I", # isort rules
+    "UP",   # pyupgrade rules
+    "E101", # mixed-spaces-and-tabs
+    "E111", # indentation-with-invalid-multiple
+    "E112", # no-indented-block
+    "E113", # unexpected-indentation
+    "E115", # no-indented-block-comment
+    "E116", # unexpected-indentation-comment
+    "E117", # over-indented
+    "RUF019", # unnecessary-key-check
+    "RUF100", # unused-noqa
+    "RUF101", # redirected-noqa
+    "S506", # unsafe-yaml-load
+    "W191", # tab-indentation
+    "W605", # invalid-escape-sequence
+]
+ignore = [
+    "B904", # raise-without-from-inside-except
+    "N805", # First argument of a method should be named `self`
+    "N806", # Variable in function should be lowercase
+]
+
+fixable = ["ALL"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_[a-zA-Z0-9_]*|)$"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint.mccabe]
+max-complexity = 5
+
+[tool.pylint]
+disable = ["all"]  # diable all rule first
+enable = ["too-many-statements"]  # then enable too-many-statements rule
+max-statements = 50  # function max statement
+
+############################################################
+# Dependency group
+############################################################
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+pydantic = ">=1.10,<2.5"
+httpx = ">=0.24,<1.0"
+
+[tool.poetry.group.dev]
+optional = true
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+pytest-env = "^1.1.5"
+
+[tool.poetry.group.format]
+optional = true
+[tool.poetry.group.format.dependencies]
+pre-commit = "^4.0.1"
