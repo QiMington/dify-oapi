@@ -6,6 +6,8 @@ from dify_oapi.core.http.transport import ATransport, Transport
 from dify_oapi.core.model.config import Config
 from dify_oapi.core.model.request_option import RequestOption
 
+from ..model.get_workflow_log_request import GetWorkflowLogRequest
+from ..model.get_workflow_log_response import GetWorkflowLogResponse
 from ..model.get_workflow_result_request import GetWorkflowResultRequest
 from ..model.get_workflow_result_response import GetWorkflowResultResponse
 from ..model.run_workflow_request import RunWorkflowRequest
@@ -99,3 +101,11 @@ class Workflow:
         self, request: GetWorkflowResultRequest, option: RequestOption | None = None
     ) -> GetWorkflowResultResponse:
         return await ATransport.aexecute(self.config, request, unmarshal_as=GetWorkflowResultResponse, option=option)
+
+    def log(self, request: GetWorkflowLogRequest, option: RequestOption | None = None) -> GetWorkflowLogResponse:
+        if request.body is not None:
+            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
+        return Transport.execute(self.config, request, unmarshal_as=GetWorkflowLogResponse, option=option)
+
+    async def alog(self, request: GetWorkflowLogRequest, option: RequestOption | None = None) -> GetWorkflowLogResponse:
+        return await ATransport.aexecute(self.config, request, unmarshal_as=GetWorkflowLogResponse, option=option)

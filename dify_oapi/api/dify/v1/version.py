@@ -1,6 +1,6 @@
 from dify_oapi.core.model.config import Config
 
-from .resource import Audio, File, Message, Meta, Parameter
+from .resource import Audio, File, Info, Message, Meta, Parameter
 
 
 class V1:
@@ -10,3 +10,4 @@ class V1:
         self.audio: Audio = Audio(config)
         self.parameter: Parameter = Parameter(config)
         self.message: Message = Message(config)
+        self.info: Info = Info(config)
