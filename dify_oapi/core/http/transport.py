@@ -108,10 +108,10 @@ class Transport:
                 timeout=conf.timeout,
             )
             logger.debug(
-                f"{str(req.http_method.name)} {url} {response.status_code}, "
-                f"headers: {JSON.marshal(headers)}, "
-                f"params: {JSON.marshal(req.queries)}, "
-                f"body: {str(data, UTF_8) if isinstance(data, bytes) else data}"
+                f"{str(req.http_method.name)} {url} {response.status_code}"
+                f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
+                f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
+                f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
             )
 
             raw_resp = RawResponse()

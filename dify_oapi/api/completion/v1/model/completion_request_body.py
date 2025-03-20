@@ -22,7 +22,7 @@ class CompletionRequestBodyBuilder:
         self._completion_request_body = CompletionRequestBody()
 
     def inputs(self, inputs: CompletionRequestBodyInput) -> CompletionRequestBodyBuilder:
-        self._completion_request_body.inputs = inputs.model_dump(exclude_none=True)
+        self._completion_request_body.inputs = inputs
         return self
 
     def response_mode(self, response_mode: str) -> CompletionRequestBodyBuilder:
