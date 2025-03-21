@@ -1,10 +1,13 @@
+import asyncio
 import json
+import math
+import time
 from collections.abc import AsyncGenerator, Coroutine, Generator
 from typing import Literal, overload
 
 import httpx
 
-from dify_oapi.core.const import APPLICATION_JSON, AUTHORIZATION, UTF_8
+from dify_oapi.core.const import APPLICATION_JSON, AUTHORIZATION, SLEEP_BASE_TIME, UTF_8
 from dify_oapi.core.json import JSON
 from dify_oapi.core.log import logger
 from dify_oapi.core.model.base_request import BaseRequest
@@ -97,16 +100,45 @@ class Transport:
 
             return _stream_generator()
         with httpx.Client() as client:
-            response = client.request(
-                str(req.http_method.name),
-                url,
-                headers=headers,
-                params=req.queries,
-                json=json_,
-                data=data,
-                files=files,
-                timeout=conf.timeout,
-            )
+            # 通过变量赋值，防止动态调整 max_retry_count 出现并发问题
+            retry_count = conf.max_retry_count
+            for i in range(0, retry_count + 1):
+                # 采用指数避让策略
+                if i != 0:
+                    sleep_time = _get_sleep_time(i)
+                    logger.info(f"in-request: sleep {sleep_time}s")
+                    time.sleep(sleep_time)
+                try:
+                    response = client.request(
+                        str(req.http_method.name),
+                        url,
+                        headers=headers,
+                        params=req.queries,
+                        json=json_,
+                        data=data,
+                        files=files,
+                        timeout=conf.timeout,
+                    )
+                except httpx.RequestError as e:
+                    if i < retry_count:
+                        logger.info(
+                            f"in-request: retry success "
+                            f"{str(req.http_method.name)} {url}"
+                            f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
+                            f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
+                            f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
+                            f"{f', exp: {e}'}"
+                        )
+                        continue
+                    logger.info(
+                        f"in-request: retry fail "
+                        f"{str(req.http_method.name)} {url}"
+                        f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
+                        f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
+                        f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
+                        f"{f', exp: {e}'}"
+                    )
+                    raise e
             logger.debug(
                 f"{str(req.http_method.name)} {url} {response.status_code}"
                 f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
@@ -161,6 +193,8 @@ class ATransport:
         unmarshal_as: type[T] | None = None,
         option: RequestOption | None = None,
     ):
+        if unmarshal_as is None:
+            unmarshal_as = BaseResponse
         if option is None:
             option = RequestOption()
 
@@ -207,16 +241,45 @@ class ATransport:
 
             return _async_stream_generator()
         async with httpx.AsyncClient() as client:
-            response = await client.request(
-                str(req.http_method.name),
-                url,
-                headers=req.headers,
-                params=req.queries,
-                json=json_,
-                data=data,
-                files=files,
-                timeout=conf.timeout,
-            )
+            # 通过变量赋值，防止动态调整 max_retry_count 出现并发问题
+            retry_count = conf.max_retry_count
+            for i in range(0, retry_count + 1):
+                # 采用指数避让策略
+                if i != 0:
+                    sleep_time = _get_sleep_time(i)
+                    logger.info(f"in-request: sleep {sleep_time}s")
+                    await asyncio.sleep(sleep_time)
+                try:
+                    response = await client.request(
+                        str(req.http_method.name),
+                        url,
+                        headers=req.headers,
+                        params=req.queries,
+                        json=json_,
+                        data=data,
+                        files=files,
+                        timeout=conf.timeout,
+                    )
+                except httpx.RequestError as e:
+                    if i < retry_count:
+                        logger.info(
+                            f"in-request: retry success "
+                            f"{str(req.http_method.name)} {url}"
+                            f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
+                            f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
+                            f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
+                            f"{f', exp: {e}'}"
+                        )
+                        continue
+                    logger.info(
+                        f"in-request: retry fail "
+                        f"{str(req.http_method.name)} {url}"
+                        f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
+                        f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
+                        f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
+                        f"{f', exp: {e}'}"
+                    )
+                    raise e
 
             logger.debug(
                 f"{str(req.http_method.name)} {url} {response.status_code}"
@@ -278,3 +341,15 @@ def _unmarshaller(raw_resp: RawResponse, unmarshal_as: type[T]) -> T:
     resp.raw = raw_resp
     resp.code = 0
     return resp
+
+
+def _get_sleep_time(retry_count: int):
+    sleep_time = SLEEP_BASE_TIME * math.pow(2, retry_count - 1)
+    # if sleep_time > 60:
+    #     sleep_time = 60
+    # if raw_resp and (raw_resp.status_code == 429 or raw_resp.status_code == 503) and 'retry-after' in raw_resp.headers:
+    #     try:
+    #         sleep_time = max(int(raw_resp.headers['retry-after']), sleep_time)
+    #     except Exception as e:
+    #         logger.warning('try to parse retry-after from headers error: {}'.format(e))
+    return sleep_time

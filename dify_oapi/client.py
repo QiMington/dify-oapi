@@ -5,6 +5,7 @@ from .api.completion.service import CompletionService
 from .api.dify.service import DifyService
 from .api.knowledge_base.service import KnowledgeBaseService
 from .api.workflow.service import WorkflowService
+from .core.enum import LogLevel
 from .core.http.transport import Transport
 from .core.log import logger
 from .core.model.base_request import BaseRequest
@@ -35,6 +36,14 @@ class ClientBuilder:
 
     def domain(self, domain: str) -> ClientBuilder:
         self._config.domain = domain
+        return self
+
+    def log_level(self, level: LogLevel) -> ClientBuilder:
+        self._config.log_level = level
+        return self
+
+    def max_retry_count(self, count: int) -> ClientBuilder:
+        self._config.max_retry_count = count
         return self
 
     def build(self) -> Client:

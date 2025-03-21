@@ -10,3 +10,6 @@ CONTENT_TYPE = "Content-Type"
 APPLICATION_JSON = "application/json"
 
 UTF_8 = "UTF-8"
+
+
+SLEEP_BASE_TIME = 0.1

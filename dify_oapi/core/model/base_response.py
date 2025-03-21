@@ -10,5 +10,5 @@ class BaseResponse(BaseModel):
     msg: str | None = Field(default=None, exclude=True)
 
     @property
-    def success(self):
+    def success(self) -> bool:
         return self.code is not None and self.code == 0
