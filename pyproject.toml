@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dify-oapi"
-version = "0.0.5"
+version = "0.0.6"
 description = "A package for interacting with the Dify Service-API"
 authors = ["QiMington <qimington@gmail.com>"]
 readme = "README.md"
