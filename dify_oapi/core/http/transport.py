@@ -119,6 +119,7 @@ class Transport:
                         files=files,
                         timeout=conf.timeout,
                     )
+                    break
                 except httpx.RequestError as e:
                     if i < retry_count:
                         logger.info(
@@ -260,6 +261,7 @@ class ATransport:
                         files=files,
                         timeout=conf.timeout,
                     )
+                    break
                 except httpx.RequestError as e:
                     if i < retry_count:
                         logger.info(
