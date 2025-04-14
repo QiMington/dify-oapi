@@ -25,7 +25,7 @@ class CompletionRequestBuilder:
 
     def request_body(self, request_body: CompletionRequestBody) -> CompletionRequestBuilder:
         self._completion_request.request_body = request_body
-        self._completion_request.body = request_body.model_dump(exclude_none=True)
+        self._completion_request.body = request_body.model_dump(exclude_none=True, mode="json")
         if custom_inputs := request_body.inputs.custom_inputs:
             self._completion_request.body["inputs"].update(custom_inputs)
         return self

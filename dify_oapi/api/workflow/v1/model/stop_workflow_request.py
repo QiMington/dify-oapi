@@ -31,7 +31,7 @@ class StopWorkflowRequestBuilder:
 
     def request_body(self, request_body: StopWorkflowRequestBody) -> StopWorkflowRequestBuilder:
         self._stop_workflow_request.request_body = request_body
-        self._stop_workflow_request.body = request_body.model_dump(exclude_none=True)
+        self._stop_workflow_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self
 
     def build(self) -> StopWorkflowRequest:

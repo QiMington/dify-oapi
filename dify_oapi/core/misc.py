@@ -22,7 +22,7 @@ class HiddenText(str):
 
     # This is useful for testing.
     def __eq__(self, other: any) -> bool:
-        if type(self) is type(other):
+        if type(self) is not type(other):
             return False
 
         # The string being used for redaction doesn't also have to match,

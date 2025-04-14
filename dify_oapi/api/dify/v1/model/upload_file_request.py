@@ -38,5 +38,5 @@ class UploadFileRequestBuilder:
 
     def request_body(self, request_body: UploadFileBody) -> UploadFileRequestBuilder:
         self._upload_file_request.request_body = request_body
-        self._upload_file_request.body = request_body.model_dump(exclude_none=True)
+        self._upload_file_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self

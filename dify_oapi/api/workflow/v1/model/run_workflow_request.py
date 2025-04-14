@@ -25,7 +25,7 @@ class RunWorkflowRequestBuilder:
 
     def request_body(self, request_body: RunWorkflowRequestBody) -> RunWorkflowRequestBuilder:
         self._run_workflow_request.request_body = request_body
-        self._run_workflow_request.body = request_body.model_dump(exclude_none=True)
+        self._run_workflow_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self
 
     def build(self) -> RunWorkflowRequest:

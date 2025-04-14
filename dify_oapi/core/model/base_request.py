@@ -1,7 +1,6 @@
 from typing import Any
 
 from dify_oapi.core.enum import HttpMethod
-from dify_oapi.core.misc import HiddenText
 
 
 class BaseRequest:
@@ -11,7 +10,7 @@ class BaseRequest:
         self.body: dict | None = None
         self.paths: dict[str, str] = {}
         self.queries: list[tuple[str, str]] = []
-        self.headers: dict[str, str | HiddenText] = {}
+        self.headers: dict[str, str] = {}
         self.body: dict = {}
         self.files: dict | None = None
 

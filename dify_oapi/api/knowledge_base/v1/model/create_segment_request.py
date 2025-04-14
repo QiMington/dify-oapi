@@ -40,5 +40,5 @@ class CreateSegmentRequestBuilder:
 
     def request_body(self, request_body: CreateSegmentRequestBody) -> CreateSegmentRequestBuilder:
         self._create_segment_request.request_body = request_body
-        self._create_segment_request.body = request_body.model_dump(exclude_none=True)
+        self._create_segment_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self
