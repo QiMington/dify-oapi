@@ -23,8 +23,10 @@ class Dataset(BaseModel):
     embedding_available: bool | None = None
     retrieval_model_dict: DatasetResponseRetrievalModel | None = None
     tags: list | None = None
+    doc_form: str | None = None
     external_knowledge_info: DatasetResponseExternalKnowledgeInfo | None = None
     external_retrieval_model: DatasetResponseExternalRetrievalModel | None = None
+    partial_member_list: list | None = None
 
 
 class DatasetResponseRetrievalModel(BaseModel):
@@ -32,7 +34,7 @@ class DatasetResponseRetrievalModel(BaseModel):
     reranking_enable: bool | None = None
     reranking_mode: str | None = None
     reranking_model: DatasetResponseRerankingModel | None = None
-    weights: float | None = None
+    weights: dict | None = None
     top_k: int | None = None
     score_threshold_enabled: bool | None = None
     score_threshold: float | None = None
@@ -53,3 +55,4 @@ class DatasetResponseExternalKnowledgeInfo(BaseModel):
 class DatasetResponseExternalRetrievalModel(BaseModel):
     top_k: int | None = None
     score_threshold: float | None = None
+    score_threshold_enabled: bool | None = None

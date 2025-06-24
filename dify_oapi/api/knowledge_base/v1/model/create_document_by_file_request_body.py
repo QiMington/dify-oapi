@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 from .create_document_by_file_request_body_data import (
-    CreateDocumentByTextRequestBodyData,
+    CreateDocumentByFileRequestBodyData,
 )
 
 
@@ -23,6 +23,6 @@ class CreateDocumentByFileRequestBodyBuilder:
     def build(self) -> CreateDocumentByFileRequestBody:
         return self._create_document_by_file_request_body
 
-    def data(self, data: CreateDocumentByTextRequestBodyData) -> CreateDocumentByFileRequestBodyBuilder:
+    def data(self, data: CreateDocumentByFileRequestBodyData) -> CreateDocumentByFileRequestBodyBuilder:
         self._create_document_by_file_request_body.data = data.model_dump_json(exclude_none=True)
         return self

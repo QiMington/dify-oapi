@@ -9,7 +9,7 @@ from dify_oapi.api.knowledge_base.v1.model.create_dataset_request_body import Cr
 from dify_oapi.api.knowledge_base.v1.model.create_document_by_file_request import CreateDocumentByFileRequest
 from dify_oapi.api.knowledge_base.v1.model.create_document_by_file_request_body import CreateDocumentByFileRequestBody
 from dify_oapi.api.knowledge_base.v1.model.create_document_by_file_request_body_data import (
-    CreateDocumentByTextRequestBodyData,
+    CreateDocumentByFileRequestBodyData,
 )
 from dify_oapi.api.knowledge_base.v1.model.create_document_by_text_request import CreateDocumentByTextRequest
 from dify_oapi.api.knowledge_base.v1.model.create_document_by_text_request_body import CreateDocumentByTextRequestBody
@@ -138,7 +138,7 @@ class TestKnowledgeBaseClient(unittest.TestCase):
 
     def _test_004_create_document_by_file(self):
         document_process_rule = DocumentRequestProcessRule.builder().mode("automatic").build()
-        data = CreateDocumentByTextRequestBodyData.builder().process_rule(document_process_rule).build()
+        data = CreateDocumentByFileRequestBodyData.builder().process_rule(document_process_rule).build()
         req_body = CreateDocumentByFileRequestBody.builder().data(data).build()
         with self.readme_file_path.open(mode="rb") as f:
             file_data = f.read()
