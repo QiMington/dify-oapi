@@ -118,3 +118,25 @@ pytest-env = "^1.1.5"
 optional = true
 [tool.poetry.group.format.dependencies]
 pre-commit = "^4.0.1"
+mypy = "^1.16.1"
+
+[tool.mypy]
+files = ["."] # 指定检查的文件或目录
+exclude = [".venv", "venv"]
+
+python_version = "3.10"
+strict_optional = true
+ignore_missing_imports = true
+allow_untyped_globals = false
+
+check_untyped_defs = true
+disallow_any_unimported = false
+
+warn_return_any = true
+warn_unreachable = true
+warn_redundant_casts = true
+
+strict_equality = true
+
+plugins = ["pydantic.mypy"]
+
