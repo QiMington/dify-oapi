@@ -17,6 +17,8 @@ from dify_oapi.core.model.request_option import RequestOption
 class TestChatClient(unittest.TestCase):
     def setUp(self):
         workflow_key = os.environ.get("WORKFLOW_KEY")
+        if workflow_key is None:
+            raise OSError("WORKFLOW_KEY environment variable not set")
         self.assertIsNotNone(workflow_key, "WORKFLOW_KEY must be set")
         self.client = Client.builder().domain(os.environ.get("DOMAIN", "https://api.dify.ai")).build()
         self.req_option = RequestOption.builder().api_key(workflow_key).build()
@@ -86,7 +88,7 @@ class TestChatClient(unittest.TestCase):
         req = RunWorkflowRequest.builder().request_body(req_body).build()
         response = self.client.workflow.v1.workflow.run(req, self.req_option, True)
         if not isinstance(response, GeneratorType):
-            self.fail(response.msg)
+            self.fail("stream workflow failed")
 
     def _test_003_result(self):
         req = GetWorkflowResultRequest.builder().workflow_id(self.workflow_id).build()

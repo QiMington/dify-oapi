@@ -16,6 +16,8 @@ from dify_oapi.core.model.request_option import RequestOption
 class TestCompletionClient(unittest.TestCase):
     def setUp(self):
         completion_key = os.environ.get("COMPLETION_KEY")
+        if completion_key is None:
+            raise OSError("COMPLETION_KEY environment variable not set")
         self.assertIsNotNone(completion_key, "COMPLETION_KEY must be set")
         self.client = Client.builder().domain(os.environ.get("DOMAIN", "https://api.dify.ai")).build()
         self.req_option = RequestOption.builder().api_key(completion_key).build()
@@ -84,7 +86,7 @@ class TestCompletionClient(unittest.TestCase):
         req = CompletionRequest.builder().request_body(req_body).build()
         response = self.client.completion.v1.completion.completion(req, self.req_option, True)
         if not isinstance(response, GeneratorType):
-            self.fail(response.msg)
+            self.fail("stream completion failed")
 
     def _test_003_stop_chat(self):
         req_body = StopCompletionRequestBody.builder().user("abc-123").build()

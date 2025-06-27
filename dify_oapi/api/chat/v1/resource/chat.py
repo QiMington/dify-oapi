@@ -1,7 +1,6 @@
 from collections.abc import AsyncGenerator, Generator
 from typing import Literal, overload
 
-from dify_oapi.core.const import APPLICATION_JSON, CONTENT_TYPE
 from dify_oapi.core.http.transport import ATransport, Transport
 from dify_oapi.core.model.config import Config
 from dify_oapi.core.model.request_option import RequestOption
@@ -33,8 +32,6 @@ class Chat:
         option: RequestOption | None = None,
         stream: bool = False,
     ):
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         if stream:
             return Transport.execute(self.config, request, option=option, stream=True)
         else:
@@ -46,7 +43,9 @@ class Chat:
     ) -> AsyncGenerator[bytes, None]: ...
 
     @overload
-    def achat(self, request: ChatRequest, option: RequestOption | None, stream: Literal[False]) -> ChatResponse: ...
+    async def achat(
+        self, request: ChatRequest, option: RequestOption | None, stream: Literal[False]
+    ) -> ChatResponse: ...
 
     @overload
     async def achat(self, request: ChatRequest, option: RequestOption | None) -> ChatResponse: ...
@@ -63,8 +62,6 @@ class Chat:
             return await ATransport.aexecute(self.config, request, unmarshal_as=ChatResponse, option=option)
 
     def stop(self, request: StopChatRequest, option: RequestOption | None = None) -> StopChatResponse:
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         return Transport.execute(self.config, request, unmarshal_as=StopChatResponse, option=option)
 
     async def astop(self, request: StopChatRequest, option: RequestOption | None = None) -> StopChatResponse:

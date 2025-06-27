@@ -7,7 +7,6 @@ class BaseRequest:
     def __init__(self) -> None:
         self.http_method: HttpMethod | None = None
         self.uri: str | None = None
-        self.body: dict | None = None
         self.paths: dict[str, str] = {}
         self.queries: list[tuple[str, str]] = []
         self.headers: dict[str, str] = {}

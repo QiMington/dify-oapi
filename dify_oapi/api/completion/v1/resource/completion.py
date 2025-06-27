@@ -1,7 +1,6 @@
 from collections.abc import AsyncGenerator, Generator
 from typing import Literal, overload
 
-from dify_oapi.core.const import APPLICATION_JSON, CONTENT_TYPE
 from dify_oapi.core.http.transport import ATransport, Transport
 from dify_oapi.core.model.config import Config
 from dify_oapi.core.model.request_option import RequestOption
@@ -41,8 +40,6 @@ class Completion:
         option: RequestOption | None = None,
         stream: bool = False,
     ):
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         if stream:
             return Transport.execute(self.config, request, option=option, stream=True)
         else:
@@ -57,7 +54,7 @@ class Completion:
     ) -> AsyncGenerator[bytes, None]: ...
 
     @overload
-    def acompletion(
+    async def acompletion(
         self,
         request: CompletionRequest,
         option: RequestOption | None,
@@ -79,8 +76,6 @@ class Completion:
             return await ATransport.aexecute(self.config, request, unmarshal_as=CompletionResponse, option=option)
 
     def stop(self, request: StopCompletionRequest, option: RequestOption | None = None) -> StopCompletionResponse:
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         return Transport.execute(self.config, request, unmarshal_as=StopCompletionResponse, option=option)
 
     async def astop(

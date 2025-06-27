@@ -21,6 +21,8 @@ from dify_oapi.core.model.request_option import RequestOption
 class TestDifyClient(unittest.TestCase):
     def setUp(self):
         app_key = os.environ.get("APP_KEY")
+        if app_key is None:
+            raise OSError("APP_KEY environment variable not set")
         self.assertIsNotNone(app_key, "APP_KEY must be set")
         self.client = Client.builder().domain(os.environ.get("DOMAIN", "https://api.dify.ai")).build()
         self.req_option = RequestOption.builder().api_key(app_key).build()

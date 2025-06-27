@@ -1,7 +1,6 @@
 from collections.abc import AsyncGenerator, Generator
 from typing import Literal, overload
 
-from dify_oapi.core.const import APPLICATION_JSON, CONTENT_TYPE
 from dify_oapi.core.http.transport import ATransport, Transport
 from dify_oapi.core.model.config import Config
 from dify_oapi.core.model.request_option import RequestOption
@@ -45,8 +44,6 @@ class Workflow:
         option: RequestOption | None = None,
         stream: bool = False,
     ):
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         if stream:
             return Transport.execute(self.config, request, option=option, stream=True)
         else:
@@ -61,7 +58,7 @@ class Workflow:
     ) -> AsyncGenerator[bytes, None]: ...
 
     @overload
-    def arun(
+    async def arun(
         self,
         request: RunWorkflowRequest,
         option: RequestOption | None,
@@ -83,8 +80,6 @@ class Workflow:
             return await ATransport.aexecute(self.config, request, unmarshal_as=RunWorkflowResponse, option=option)
 
     def stop(self, request: StopWorkflowRequest, option: RequestOption | None = None) -> StopWorkflowResponse:
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         return Transport.execute(self.config, request, unmarshal_as=StopWorkflowResponse, option=option)
 
     async def astop(self, request: StopWorkflowRequest, option: RequestOption | None = None) -> StopWorkflowResponse:
@@ -93,8 +88,6 @@ class Workflow:
     def result(
         self, request: GetWorkflowResultRequest, option: RequestOption | None = None
     ) -> GetWorkflowResultResponse:
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         return Transport.execute(self.config, request, unmarshal_as=GetWorkflowResultResponse, option=option)
 
     async def aresult(
@@ -103,8 +96,6 @@ class Workflow:
         return await ATransport.aexecute(self.config, request, unmarshal_as=GetWorkflowResultResponse, option=option)
 
     def log(self, request: GetWorkflowLogRequest, option: RequestOption | None = None) -> GetWorkflowLogResponse:
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         return Transport.execute(self.config, request, unmarshal_as=GetWorkflowLogResponse, option=option)
 
     async def alog(self, request: GetWorkflowLogRequest, option: RequestOption | None = None) -> GetWorkflowLogResponse:

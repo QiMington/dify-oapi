@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class HitTestRequestBodyRetrievalModel(BaseModel):
     search_method: str | None = None
     reranking_enable: bool | None = None
-    reranking_mode: dict | None = None
+    reranking_mode: dict = Field(default_factory=dict)
     weights: float | None = None
     top_k: int | None = None
     score_threshold_enabled: bool | None = None

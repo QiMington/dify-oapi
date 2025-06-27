@@ -1,4 +1,3 @@
-from dify_oapi.core.const import APPLICATION_JSON, CONTENT_TYPE
 from dify_oapi.core.http.transport import ATransport, Transport
 from dify_oapi.core.model.config import Config
 from dify_oapi.core.model.request_option import RequestOption
@@ -18,10 +17,6 @@ class Conversation:
     def list(
         self, request: GetConversationListRequest, option: RequestOption | None = None
     ) -> GetConversationListResponse:
-        # 添加 content-type
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
-
         # 发起请求
         return Transport.execute(
             self.config,
@@ -44,8 +39,6 @@ class Conversation:
     def delete(
         self, request: DeleteConversationRequest, option: RequestOption | None = None
     ) -> DeleteConversationResponse:
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         return Transport.execute(self.config, request, unmarshal_as=DeleteConversationResponse, option=option)
 
     async def adelete(
@@ -57,8 +50,6 @@ class Conversation:
     def rename(
         self, request: RenameConversationRequest, option: RequestOption | None = None
     ) -> RenameConversationResponse:
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         return Transport.execute(self.config, request, unmarshal_as=RenameConversationResponse, option=option)
 
     async def arename(

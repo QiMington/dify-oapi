@@ -53,7 +53,7 @@ class Transport:
         req: BaseRequest,
         *,
         stream: bool = False,
-        unmarshal_as: type[T] | None = None,
+        unmarshal_as: type[T] | type[BaseResponse] | None = None,
         option: RequestOption | None = None,
     ):
         if unmarshal_as is None:
@@ -74,16 +74,19 @@ class Transport:
             # application/json
             json_ = json.loads(JSON.marshal(req.body))
 
+        if req.http_method is None:
+            raise RuntimeError("HTTP method is required")
+        http_method_name = str(req.http_method.name)
         if stream:
 
             def _stream_generator() -> Generator[bytes, None, None]:
                 with (
                     httpx.Client() as _client,
                     _client.stream(
-                        str(req.http_method.name),
+                        http_method_name,
                         url,
                         headers=headers,
-                        params=req.queries,
+                        params=tuple(req.queries),
                         json=json_,
                         data=data,
                         files=files,
@@ -91,7 +94,7 @@ class Transport:
                     ) as async_response,
                 ):
                     logger.debug(
-                        f"{str(req.http_method.name)} {url} {async_response.status_code}, "
+                        f"{http_method_name} {url} {async_response.status_code}, "
                         f"headers: {JSON.marshal(headers)}, "
                         f"params: {JSON.marshal(req.queries)}, "
                         f"stream response"
@@ -110,10 +113,10 @@ class Transport:
                     time.sleep(sleep_time)
                 try:
                     response = client.request(
-                        str(req.http_method.name),
+                        http_method_name,
                         url,
                         headers=headers,
-                        params=req.queries,
+                        params=tuple(req.queries),
                         json=json_,
                         data=data,
                         files=files,
@@ -124,7 +127,7 @@ class Transport:
                     if i < retry_count:
                         logger.info(
                             f"in-request: retry success "
-                            f"{str(req.http_method.name)} {url}"
+                            f"{http_method_name} {url}"
                             f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
                             f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
                             f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
@@ -133,7 +136,7 @@ class Transport:
                         continue
                     logger.info(
                         f"in-request: retry fail "
-                        f"{str(req.http_method.name)} {url}"
+                        f"{http_method_name} {url}"
                         f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
                         f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
                         f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
@@ -141,7 +144,7 @@ class Transport:
                     )
                     raise e
             logger.debug(
-                f"{str(req.http_method.name)} {url} {response.status_code}"
+                f"{http_method_name} {url} {response.status_code}"
                 f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
                 f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
                 f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
@@ -191,7 +194,7 @@ class ATransport:
         req: BaseRequest,
         *,
         stream: bool = False,
-        unmarshal_as: type[T] | None = None,
+        unmarshal_as: type[T] | type[BaseResponse] | None = None,
         option: RequestOption | None = None,
     ):
         if unmarshal_as is None:
@@ -214,17 +217,19 @@ class ATransport:
         elif req.body is not None:
             # application/json
             json_ = json.loads(JSON.marshal(req.body))
-
+        if req.http_method is None:
+            raise RuntimeError("Http method is required")
+        http_method_name = str(req.http_method.name)
         if stream:
 
             async def _async_stream_generator():
                 async with (
                     httpx.AsyncClient() as _client,
                     _client.stream(
-                        str(req.http_method.name),
+                        http_method_name,
                         url,
                         headers=req.headers,
-                        params=req.queries,
+                        params=tuple(req.queries),
                         json=json_,
                         data=data,
                         files=files,
@@ -232,7 +237,7 @@ class ATransport:
                     ) as async_response,
                 ):
                     logger.debug(
-                        f"{str(req.http_method.name)} {url} {async_response.status_code}, "
+                        f"{http_method_name} {url} {async_response.status_code}, "
                         f"headers: {JSON.marshal(headers)}, "
                         f"params: {JSON.marshal(req.queries)}, "
                         f"stream response"
@@ -252,10 +257,10 @@ class ATransport:
                     await asyncio.sleep(sleep_time)
                 try:
                     response = await client.request(
-                        str(req.http_method.name),
+                        http_method_name,
                         url,
                         headers=req.headers,
-                        params=req.queries,
+                        params=tuple(req.queries),
                         json=json_,
                         data=data,
                         files=files,
@@ -266,7 +271,7 @@ class ATransport:
                     if i < retry_count:
                         logger.info(
                             f"in-request: retry success "
-                            f"{str(req.http_method.name)} {url}"
+                            f"{http_method_name} {url}"
                             f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
                             f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
                             f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
@@ -275,7 +280,7 @@ class ATransport:
                         continue
                     logger.info(
                         f"in-request: retry fail "
-                        f"{str(req.http_method.name)} {url}"
+                        f"{http_method_name} {url}"
                         f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
                         f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
                         f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
@@ -284,7 +289,7 @@ class ATransport:
                     raise e
 
             logger.debug(
-                f"{str(req.http_method.name)} {url} {response.status_code}"
+                f"{http_method_name} {url} {response.status_code}"
                 f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
                 f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
                 f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
@@ -298,11 +303,13 @@ class ATransport:
             return _unmarshaller(raw_resp, unmarshal_as)
 
 
-def _build_url(domain: str, uri: str, paths: dict[str, str]) -> str:
-    if paths is None:
-        paths = {}
-    for key in paths:
-        uri = uri.replace(":" + key, paths[key])
+def _build_url(domain: str | None, uri: str | None, paths: dict[str, str] | None) -> str:
+    if domain is None:
+        raise RuntimeError("domain is required")
+    if uri is None:
+        raise RuntimeError("uri is required")
+    for key, value in (paths or {}).items():
+        uri = uri.replace(":" + key, value)
     if domain.endswith("/") and uri.startswith("/"):
         domain = domain[:-1]
     return domain + uri
@@ -328,6 +335,10 @@ def _merge_dicts(*dicts):
 
 
 def _unmarshaller(raw_resp: RawResponse, unmarshal_as: type[T]) -> T:
+    if raw_resp.status_code is None:
+        raise RuntimeError("status_code is required")
+    if raw_resp.content is None:
+        raise RuntimeError("status_code is required")
     if not (200 <= raw_resp.status_code < 300):
         resp = unmarshal_as(raw=raw_resp, code=raw_resp.status_code, msg=raw_resp.content.decode())
         return resp

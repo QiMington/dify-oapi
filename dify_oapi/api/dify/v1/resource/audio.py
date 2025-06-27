@@ -1,4 +1,3 @@
-from dify_oapi.core.const import APPLICATION_JSON, CONTENT_TYPE
 from dify_oapi.core.http.transport import ATransport, Transport
 from dify_oapi.core.model.config import Config
 from dify_oapi.core.model.request_option import RequestOption
@@ -12,8 +11,6 @@ class Audio:
         self.config: Config = config
 
     def from_text(self, request: TextToAudioRequest, option: RequestOption | None = None) -> TextToAudioResponse:
-        if request.body is not None:
-            option.headers[CONTENT_TYPE] = f"{APPLICATION_JSON}; charset=utf-8"
         return Transport.execute(self.config, request, unmarshal_as=TextToAudioResponse, option=option)
 
     async def afrom_text(self, request: TextToAudioRequest, option: RequestOption | None = None) -> TextToAudioResponse:

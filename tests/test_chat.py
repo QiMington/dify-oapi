@@ -26,6 +26,8 @@ from dify_oapi.core.model.request_option import RequestOption
 class TestChatClient(unittest.TestCase):
     def setUp(self):
         chat_key = os.environ.get("CHAT_KEY")
+        if not chat_key:
+            raise OSError("CHAT_KEY environment variable not set")
         self.assertIsNotNone(chat_key, "CHAT_KEY must be set")
         self.client = Client.builder().domain(os.environ.get("DOMAIN", "https://api.dify.ai")).build()
         self.req_option = RequestOption.builder().api_key(chat_key).build()
@@ -122,7 +124,7 @@ class TestChatClient(unittest.TestCase):
         req = ChatRequest.builder().request_body(req_body).build()
         response = self.client.chat.v1.chat.chat(req, self.req_option, True)
         if not isinstance(response, GeneratorType):
-            self.fail(response.msg)
+            self.fail("stream chat failed")
 
     def _test_003_stop_chat(self):
         req_body = StopChatRequestBody.builder().user("abc-123").build()

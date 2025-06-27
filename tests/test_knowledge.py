@@ -38,6 +38,8 @@ from dify_oapi.core.model.request_option import RequestOption
 class TestKnowledgeBaseClient(unittest.TestCase):
     def setUp(self):
         dataset_key = os.environ.get("DATASET_KEY")
+        if dataset_key is None:
+            raise OSError("DATASET_KEY environment variable not set")
         self.assertNotIn(dataset_key, [None, ""], "DATASET_KEY must be set")
         self.client = Client.builder().domain(os.environ.get("DOMAIN", "https://api.dify.ai")).build()
         self.req_option = RequestOption.builder().api_key(dataset_key).build()
@@ -130,7 +132,8 @@ class TestKnowledgeBaseClient(unittest.TestCase):
         req = CreateDocumentByTextRequest.builder().dataset_id(self.dataset_id).request_body(req_body).build()
         response = self.client.knowledge_base.v1.document.create_by_text(req, self.req_option)
         self.assertTrue(response.success, response.msg)
-        self._document_id = response.document.id
+        if response.document and response.document.id:
+            self._document_id = response.document.id
         self._batch = response.batch
 
     def _test_004_create_document_by_file(self):
@@ -138,18 +141,19 @@ class TestKnowledgeBaseClient(unittest.TestCase):
         data = CreateDocumentByTextRequestBodyData.builder().process_rule(document_process_rule).build()
         req_body = CreateDocumentByFileRequestBody.builder().data(data).build()
         with self.readme_file_path.open(mode="rb") as f:
-            data = f.read()
+            file_data = f.read()
         req = (
             CreateDocumentByFileRequest.builder()
             .dataset_id(self.dataset_id)
             .request_body(req_body)
-            .file(BytesIO(data), self.readme_file_path.name)
+            .file(BytesIO(file_data), self.readme_file_path.name)
             .build()
         )
         response = self.client.knowledge_base.v1.document.create_by_file(req, self.req_option)
         self.assertTrue(response.success, response.msg)
         self._batch = response.batch
-        self._document_id = response.document.id
+        if response.document and response.document.id:
+            self._document_id = response.document.id
 
     def _test_005_update_document_by_text(self):
         req_body = UpdateDocumentByTextRequestBody.builder().text("imtext2").name("imname2").build()
@@ -180,13 +184,14 @@ class TestKnowledgeBaseClient(unittest.TestCase):
         )
         response = self.client.knowledge_base.v1.segment.create(req, self.req_option)
         self.assertTrue(response.success, response.msg)
-        self._segment_id = response.data[0].id
+        if response.data:
+            self._segment_id = response.data[0].id
 
     def _test_008_list_segment(self):
         req = ListSegmentRequest.builder().dataset_id(self.dataset_id).document_id(self.document_id).build()
         response = self.client.knowledge_base.v1.segment.list(req, self.req_option)
         self.assertTrue(response.success, response.msg)
-        if self._segment_id is None and len(response.data) > 0:
+        if self._segment_id is None and response.data:
             self._segment_id = response.data[0].id
 
     def _test_009_update_segment(self):
