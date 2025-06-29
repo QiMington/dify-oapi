@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass(frozen=True, slots=False)
@@ -11,7 +12,7 @@ class HiddenText(str):
         return obj
 
     @property
-    def __dict__(self):
+    def __dict__(self):  # type: ignore[override]
         return self.__repr__()
 
     def __repr__(self) -> str:
@@ -21,8 +22,8 @@ class HiddenText(str):
         return self.redacted
 
     # This is useful for testing.
-    def __eq__(self, other: any) -> bool:
-        if type(self) is not type(other):
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, type(self)):
             return False
 
         # The string being used for redaction doesn't also have to match,
