@@ -339,9 +339,6 @@ def _unmarshaller(raw_resp: RawResponse, unmarshal_as: type[T]) -> T:
         raise RuntimeError("status_code is required")
     if raw_resp.content is None:
         raise RuntimeError("status_code is required")
-    if not (200 <= raw_resp.status_code < 300):
-        resp = unmarshal_as(raw=raw_resp, code=raw_resp.status_code, msg=raw_resp.content.decode())
-        return resp
     resp = unmarshal_as()
     if raw_resp.content_type is not None and raw_resp.content_type.startswith(APPLICATION_JSON):
         content = str(raw_resp.content, UTF_8)
@@ -352,7 +349,8 @@ def _unmarshaller(raw_resp: RawResponse, unmarshal_as: type[T]) -> T:
                 logger.error(f"Failed to unmarshal to {unmarshal_as} from {content}")
                 raise e
     resp.raw = raw_resp
-    resp.code = 0
+    # if 200 <= raw_resp.status_code < 300:
+    #     resp.code = "success"
     return resp
 
 

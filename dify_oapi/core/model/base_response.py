@@ -1,14 +1,18 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from .raw_response import RawResponse
 
 
 class BaseResponse(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
     raw: RawResponse | None = None
-    code: int | None = Field(default=None, exclude=True)
-    msg: str | None = Field(default=None, exclude=True)
+    code: str | None = Field(default=None, exclude=True)
+    msg_: str | None = Field(default=None, validation_alias="msg", exclude=True)
+    message_: str | None = Field(default=None, validation_alias="message", exclude=True)
+
+    @property
+    def msg(self) -> str | None:
+        return self.msg_ or self.message_
 
     @property
     def success(self) -> bool:
-        return self.code is not None and self.code == 0
+        return self.code is None
