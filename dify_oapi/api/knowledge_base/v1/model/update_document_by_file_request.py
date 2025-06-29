@@ -43,7 +43,7 @@ class UpdateDocumentByFileRequestBuilder:
 
     def request_body(self, request_body: UpdateDocumentByFileRequestBody) -> UpdateDocumentByFileRequestBuilder:
         self._update_document_by_file_request.request_body = request_body
-        self._update_document_by_file_request.body = request_body.model_dump(exclude_none=True)
+        self._update_document_by_file_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self
 
     def file(self, file: BytesIO, file_name: str | None = None) -> UpdateDocumentByFileRequestBuilder:

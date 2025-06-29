@@ -31,7 +31,7 @@ class StopChatRequestBuilder:
 
     def request_body(self, request_body: StopChatRequestBody) -> StopChatRequestBuilder:
         self._stop_chat_request.request_body = request_body
-        self._stop_chat_request.body = request_body.model_dump(exclude_none=True)
+        self._stop_chat_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self
 
     def build(self) -> StopChatRequest:

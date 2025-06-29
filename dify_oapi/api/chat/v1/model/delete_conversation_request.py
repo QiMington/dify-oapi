@@ -26,7 +26,7 @@ class DeleteConversationRequestBuilder:
 
     def request_body(self, request_body: DeleteConversationRequestBody) -> DeleteConversationRequestBuilder:
         self._delete_conversation_request.request_body = request_body
-        self._delete_conversation_request.body = request_body.model_dump(exclude_none=True)
+        self._delete_conversation_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self
 
     def conversation_id(self, conversation_id: str) -> DeleteConversationRequestBuilder:

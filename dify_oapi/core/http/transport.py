@@ -10,6 +10,7 @@ import httpx
 from dify_oapi.core.const import APPLICATION_JSON, AUTHORIZATION, SLEEP_BASE_TIME, UTF_8
 from dify_oapi.core.json import JSON
 from dify_oapi.core.log import logger
+from dify_oapi.core.misc import HiddenText
 from dify_oapi.core.model.base_request import BaseRequest
 from dify_oapi.core.model.base_response import BaseResponse
 from dify_oapi.core.model.config import Config
@@ -228,7 +229,7 @@ class ATransport:
                     _client.stream(
                         http_method_name,
                         url,
-                        headers=req.headers,
+                        headers=headers,
                         params=tuple(req.queries),
                         json=json_,
                         data=data,
@@ -259,7 +260,7 @@ class ATransport:
                     response = await client.request(
                         http_method_name,
                         url,
-                        headers=req.headers,
+                        headers=headers,
                         params=tuple(req.queries),
                         json=json_,
                         data=data,
@@ -322,7 +323,7 @@ def _build_header(request: BaseRequest, option: RequestOption) -> dict[str, str]
         for key in option.headers:
             headers[key] = option.headers[key]
     if option.api_key is not None:
-        headers[AUTHORIZATION] = f"Bearer {option.api_key}"
+        headers[AUTHORIZATION] = HiddenText(f"Bearer {option.api_key}", redacted="****")
     return headers
 
 

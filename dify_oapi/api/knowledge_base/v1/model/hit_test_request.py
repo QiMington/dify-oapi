@@ -34,5 +34,5 @@ class HitTestRequestBuilder:
 
     def request_body(self, request_body: HitTestRequestBody) -> HitTestRequestBuilder:
         self._hit_test_request.request_body = request_body
-        self._hit_test_request.body = request_body.model_dump(exclude_none=True)
+        self._hit_test_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self

@@ -31,7 +31,7 @@ class AudioToTextRequestBuilder:
 
     def request_body(self, request_body: AudioToTextRequestBody) -> AudioToTextRequestBuilder:
         self._audio_to_text_request.request_body = request_body
-        self._audio_to_text_request.body = request_body.model_dump(exclude_none=True)
+        self._audio_to_text_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self
 
     def file(self, file: BytesIO, file_name: str) -> AudioToTextRequestBuilder:

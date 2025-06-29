@@ -47,7 +47,7 @@ class Encoder(JSONEncoder):
             return float(o)
         if isinstance(o, set):
             return list(o)
-        return None
+        return super().default(o)
 
 
 def filter_null(d: dict) -> dict:

@@ -28,5 +28,5 @@ class CreateDatasetRequestBuilder:
 
     def request_body(self, request_body: CreateDatasetRequestBody) -> CreateDatasetRequestBuilder:
         self._create_dataset_request.request_body = request_body
-        self._create_dataset_request.body = request_body.model_dump(exclude_none=True)
+        self._create_dataset_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self

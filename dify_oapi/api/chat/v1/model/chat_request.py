@@ -25,7 +25,7 @@ class ChatRequestBuilder:
 
     def request_body(self, request_body: ChatRequestBody) -> ChatRequestBuilder:
         self._chat_request.request_body = request_body
-        self._chat_request.body = request_body.model_dump(exclude_none=True)
+        self._chat_request.body = request_body.model_dump(exclude_none=True, mode="json")
         return self
 
     def build(self) -> ChatRequest:
