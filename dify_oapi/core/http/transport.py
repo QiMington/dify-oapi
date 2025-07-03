@@ -3,6 +3,7 @@ import json
 import math
 import time
 from collections.abc import AsyncGenerator, Coroutine, Generator
+from http import HTTPMethod
 from typing import Literal, overload
 
 import httpx
@@ -17,6 +18,83 @@ from dify_oapi.core.model.config import Config
 from dify_oapi.core.model.raw_response import RawResponse
 from dify_oapi.core.model.request_option import RequestOption
 from dify_oapi.core.type import T
+
+
+def _stream_generator(
+    conf: Config,
+    req: BaseRequest,
+    *,
+    url: str,
+    headers: dict[str, str],
+    json_: dict | None,
+    data: dict | None,
+    files: dict | None,
+    http_method: HTTPMethod,
+) -> Generator[bytes, None, None]:
+    http_method_name = str(http_method.name)
+    stream_retry_count = conf.max_retry_count
+    for stream_retry in range(0, stream_retry_count + 1):
+        # 采用指数避让策略
+        if stream_retry != 0:
+            stream_sleep_time = _get_sleep_time(stream_retry)
+            logger.info(f"in-request: sleep {stream_sleep_time}s")
+            time.sleep(stream_sleep_time)
+        try:
+            with (
+                httpx.Client() as _client,
+                _client.stream(
+                    http_method_name,
+                    url,
+                    headers=headers,
+                    params=tuple(req.queries),
+                    json=json_,
+                    data=data,
+                    files=files,
+                    timeout=conf.timeout,
+                ) as sync_response,
+            ):
+                logger.debug(
+                    f"{http_method_name} {url} {sync_response.status_code}, "
+                    f"headers: {JSON.marshal(headers)}, "
+                    f"params: {JSON.marshal(req.queries)}, "
+                    f"stream response"
+                )
+                if sync_response.status_code != 200:
+                    try:
+                        error_detail = sync_response.read()
+                        error_message = error_detail.decode("utf-8", errors="ignore")
+                    except Exception:
+                        error_message = f"Error response with status code {sync_response.status_code}"
+                    error_message = error_message.strip()
+                    logger.warning(f"Streaming request failed: {sync_response.status_code}, detail: {error_message}")
+                    yield f"data: [ERROR] {error_message}\n\n".encode()
+                    return
+                try:
+                    yield from sync_response.iter_bytes()
+                except Exception as chunk_e:
+                    logger.exception("Streaming failed during chunk reading")
+                    yield f"data: [ERROR] Stream interrupted: {str(chunk_e)}\n\n".encode()
+                return
+        except httpx.RequestError as r_e:
+            if stream_retry < stream_retry_count:
+                logger.info(
+                    f"in-request: retry success "
+                    f"{http_method_name} {url}"
+                    f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
+                    f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
+                    f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
+                    f"{f', exp: {r_e}'}"
+                )
+                continue
+            logger.info(
+                f"in-request: retry fail "
+                f"{http_method_name} {url}"
+                f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
+                f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
+                f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
+                f"{f', exp: {r_e}'}"
+            )
+            raise r_e
 
 
 class Transport:
@@ -79,30 +157,16 @@ class Transport:
             raise RuntimeError("HTTP method is required")
         http_method_name = str(req.http_method.name)
         if stream:
-
-            def _stream_generator() -> Generator[bytes, None, None]:
-                with (
-                    httpx.Client() as _client,
-                    _client.stream(
-                        http_method_name,
-                        url,
-                        headers=headers,
-                        params=tuple(req.queries),
-                        json=json_,
-                        data=data,
-                        files=files,
-                        timeout=conf.timeout,
-                    ) as async_response,
-                ):
-                    logger.debug(
-                        f"{http_method_name} {url} {async_response.status_code}, "
-                        f"headers: {JSON.marshal(headers)}, "
-                        f"params: {JSON.marshal(req.queries)}, "
-                        f"stream response"
-                    )
-                    yield from async_response.iter_bytes()
-
-            return _stream_generator()
+            return _stream_generator(
+                conf=conf,
+                req=req,
+                url=url,
+                headers=headers,
+                json_=json_,
+                data=data,
+                files=files,
+                http_method=req.http_method,
+            )
         with httpx.Client() as client:
             # 通过变量赋值，防止动态调整 max_retry_count 出现并发问题
             retry_count = conf.max_retry_count
@@ -156,6 +220,84 @@ class Transport:
             raw_resp.headers = dict(response.headers)
             raw_resp.content = response.content
             return _unmarshaller(raw_resp, unmarshal_as)
+
+
+async def _async_stream_generator(
+    conf: Config,
+    req: BaseRequest,
+    *,
+    url: str,
+    headers: dict[str, str],
+    json_: dict | None,
+    data: dict | None,
+    files: dict | None,
+    http_method: HTTPMethod,
+):
+    http_method_name = str(http_method.name)
+    stream_retry_count = conf.max_retry_count
+    for stream_retry in range(0, stream_retry_count + 1):
+        # 采用指数避让策略
+        if stream_retry != 0:
+            stream_sleep_time = _get_sleep_time(stream_retry)
+            logger.info(f"in-request: sleep {stream_sleep_time}s")
+            await asyncio.sleep(stream_sleep_time)
+        try:
+            async with (
+                httpx.AsyncClient() as _client,
+                _client.stream(
+                    http_method_name,
+                    url,
+                    headers=headers,
+                    params=tuple(req.queries),
+                    json=json_,
+                    data=data,
+                    files=files,
+                    timeout=conf.timeout,
+                ) as async_response,
+            ):
+                logger.debug(
+                    f"{http_method_name} {url} {async_response.status_code}, "
+                    f"headers: {JSON.marshal(headers)}, "
+                    f"params: {JSON.marshal(req.queries)}, "
+                    f"stream response"
+                )
+                if async_response.status_code != 200:
+                    try:
+                        error_detail = await async_response.aread()
+                        error_message = error_detail.decode("utf-8", errors="ignore")
+                    except Exception:
+                        error_message = f"Error response with status code {async_response.status_code}"
+                    error_message = error_message.strip()
+                    logger.warning(f"Streaming request failed: {async_response.status_code}, detail: {error_message}")
+                    yield f"data: [ERROR] {error_message}\n\n".encode()
+                    return
+                try:
+                    async for chunk in async_response.aiter_bytes():
+                        yield chunk
+                except Exception as chunk_e:
+                    logger.exception("Streaming failed during chunk reading")
+                    yield f"data: [ERROR] Stream interrupted: {str(chunk_e)}\n\n".encode()
+                break
+        except httpx.RequestError as r_e:
+            if stream_retry < stream_retry_count:
+                logger.info(
+                    f"in-request: retry success "
+                    f"{http_method_name} {url}"
+                    f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
+                    f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
+                    f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
+                    f"{f', exp: {r_e}'}"
+                )
+                continue
+            logger.info(
+                f"in-request: retry fail "
+                f"{http_method_name} {url}"
+                f"{f', headers: {JSON.marshal(headers)}' if headers else ''}"
+                f"{f', params: {JSON.marshal(req.queries)}' if req.queries else ''}"
+                f"{f', body: {JSON.marshal(_merge_dicts(json_, files, data))}' if json_ or files or data else ''}"
+                f"{f', exp: {r_e}'}"
+            )
+            raise r_e
 
 
 class ATransport:
@@ -222,31 +364,16 @@ class ATransport:
             raise RuntimeError("Http method is required")
         http_method_name = str(req.http_method.name)
         if stream:
-
-            async def _async_stream_generator():
-                async with (
-                    httpx.AsyncClient() as _client,
-                    _client.stream(
-                        http_method_name,
-                        url,
-                        headers=headers,
-                        params=tuple(req.queries),
-                        json=json_,
-                        data=data,
-                        files=files,
-                        timeout=conf.timeout,
-                    ) as async_response,
-                ):
-                    logger.debug(
-                        f"{http_method_name} {url} {async_response.status_code}, "
-                        f"headers: {JSON.marshal(headers)}, "
-                        f"params: {JSON.marshal(req.queries)}, "
-                        f"stream response"
-                    )
-                    async for chunk in async_response.aiter_bytes():
-                        yield chunk
-
-            return _async_stream_generator()
+            return _async_stream_generator(
+                conf=conf,
+                req=req,
+                url=url,
+                headers=headers,
+                json_=json_,
+                data=data,
+                files=files,
+                http_method=req.http_method,
+            )
         async with httpx.AsyncClient() as client:
             # 通过变量赋值，防止动态调整 max_retry_count 出现并发问题
             retry_count = conf.max_retry_count
