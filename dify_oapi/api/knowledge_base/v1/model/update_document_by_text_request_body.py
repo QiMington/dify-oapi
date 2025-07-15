@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from .document_request_process_rule import DocumentRequestProcessRule
+from .update_document_by_text_request_body_data import UpdateDocumentByTextRequestBodyData
 
 
 class UpdateDocumentByTextRequestBody(BaseModel):
-    name: str | None = None
-    text: str | None = None
-    process_rule: DocumentRequestProcessRule | None = None
+    data: str | None = None
 
     @staticmethod
     def builder() -> UpdateDocumentByTextRequestBodyBuilder:
@@ -17,19 +15,12 @@ class UpdateDocumentByTextRequestBody(BaseModel):
 
 class UpdateDocumentByTextRequestBodyBuilder:
     def __init__(self):
-        self._update_document_by_text_request_body = UpdateDocumentByTextRequestBody()
+        update_document_by_text_request_body = UpdateDocumentByTextRequestBody()
+        self._update_document_by_text_request_body = update_document_by_text_request_body
 
     def build(self) -> UpdateDocumentByTextRequestBody:
         return self._update_document_by_text_request_body
 
-    def name(self, name: str) -> UpdateDocumentByTextRequestBodyBuilder:
-        self._update_document_by_text_request_body.name = name
-        return self
-
-    def text(self, text: str) -> UpdateDocumentByTextRequestBodyBuilder:
-        self._update_document_by_text_request_body.text = text
-        return self
-
-    def process_rule(self, process_rule: DocumentRequestProcessRule) -> UpdateDocumentByTextRequestBodyBuilder:
-        self._update_document_by_text_request_body.process_rule = process_rule
+    def data(self, data: UpdateDocumentByTextRequestBodyData) -> UpdateDocumentByTextRequestBodyBuilder:
+        self._update_document_by_text_request_body.data = data.model_dump_json(exclude_none=True)
         return self
