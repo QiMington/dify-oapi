@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from .document_request_process_rule import DocumentRequestProcessRule
+from .update_document_by_file_request_body_data import UpdateDocumentByFileRequestBodyData
 
 
 class UpdateDocumentByFileRequestBody(BaseModel):
-    name: str | None = None
-    process_rule: str | None = None
+    data: str | None = None
 
     @staticmethod
     def builder() -> UpdateDocumentByFileRequestBodyBuilder:
@@ -16,15 +15,12 @@ class UpdateDocumentByFileRequestBody(BaseModel):
 
 class UpdateDocumentByFileRequestBodyBuilder:
     def __init__(self):
-        self._update_document_by_file_request_body = UpdateDocumentByFileRequestBody()
+        update_document_by_file_request_body = UpdateDocumentByFileRequestBody()
+        self._update_document_by_file_request_body = update_document_by_file_request_body
 
     def build(self) -> UpdateDocumentByFileRequestBody:
         return self._update_document_by_file_request_body
 
-    def name(self, name: str) -> UpdateDocumentByFileRequestBodyBuilder:
-        self._update_document_by_file_request_body.name = name
-        return self
-
-    def process_rule(self, process_rule: DocumentRequestProcessRule) -> UpdateDocumentByFileRequestBodyBuilder:
-        self._update_document_by_file_request_body.process_rule = process_rule.model_dump_json(exclude_none=True)
+    def data(self, data: UpdateDocumentByFileRequestBodyData) -> UpdateDocumentByFileRequestBodyBuilder:
+        self._update_document_by_file_request_body.data = data.model_dump_json(exclude_none=True)
         return self
