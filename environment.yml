@@ -1,0 +1,8 @@
+name: dify-oapi
+dependencies:
+  - python=3.11
+  - pip
+  - black
+  - isort
+  - pytest
+  - pytest-asyncio
