@@ -48,20 +48,21 @@ def _unmarshaller(raw_resp: RawResponse, unmarshal_as: type[T]) -> T:
         raise RuntimeError("status_code is required")
     resp = unmarshal_as()
     if raw_resp.content_type is not None and raw_resp.content_type.startswith(APPLICATION_JSON):
-        content = str(raw_resp.content, UTF_8)
-        if content != "":
+        content = str(raw_resp.content, UTF_8).strip()
+        if content != "" and content != "204":
             try:
                 resp = JSON.unmarshal(content, unmarshal_as)
             except Exception as e:
                 logger.error(f"Failed to unmarshal to {unmarshal_as} from {content}")
                 raise e
     resp.raw = raw_resp
-    # if 200 <= raw_resp.status_code < 300:
-    #     resp.code = "success"
+    if raw_resp.status_code < 200 or raw_resp.status_code >= 300:
+        if resp.code is None:
+            resp.code = "error"
     return resp
 
 
-def _get_sleep_time(retry_count: int):
+def _backoff_wait_expo(retry_count: int):
     sleep_time = SLEEP_BASE_TIME * math.pow(2, retry_count - 1)
     # if sleep_time > 60:
     #     sleep_time = 60

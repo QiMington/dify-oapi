@@ -13,5 +13,5 @@ class GetWorkflowResultResponse(BaseResponse):
     elapsed_time: float | None = None
     total_tokens: int | None = None
     total_steps: int | None = None
-    created_at: str | None = None
-    finished_at: str | None = None
+    created_at: int | None = None
+    finished_at: int | None = None
