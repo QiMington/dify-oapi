@@ -13,7 +13,6 @@ from dify_oapi.core.log import logger
 from dify_oapi.core.model.base_request import BaseRequest
 from dify_oapi.core.model.base_response import BaseResponse
 from dify_oapi.core.model.config import Config
-from dify_oapi.core.model.raw_response import RawResponse
 from dify_oapi.core.model.request_option import RequestOption
 from dify_oapi.core.type import T
 
@@ -96,12 +95,8 @@ class ATransport:
         if stream:
             return _async_stream_generator(conf, request_context)
         response = await _async_block_generator(conf, request_context)
-        raw_resp = RawResponse()
-        raw_resp.status_code = response.status_code
-        raw_resp.headers = dict(response.headers)
-        raw_resp.content = response.content
 
-        return _unmarshaller(raw_resp, unmarshal_as)
+        return _unmarshaller(unmarshal_as, http_resp=response)
 
 
 async def _async_stream_generator(conf: Config, ctx: RequestContext, /) -> AsyncGenerator[bytes, None]:

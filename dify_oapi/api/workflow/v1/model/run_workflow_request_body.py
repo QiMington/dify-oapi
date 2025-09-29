@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pydantic import BaseModel
+from typing_extensions import deprecated
 
 from .run_workflow_request_file import RunWorkflowRequestFile
 
@@ -27,6 +28,14 @@ class RunWorkflowRequestBodyBuilder:
         self._run_workflow_body.inputs = inputs
         return self
 
+    @deprecated(
+        """
+        This method is deprecated and will be removed in a future release. 
+        The response_mode is now automatically determined based on whether 
+        streaming or blocking execution is requested. 
+        You no longer need to set it manually.
+        """
+    )
     def response_mode(self, response_mode: str) -> RunWorkflowRequestBodyBuilder:
         if response_mode not in ["streaming", "blocking"]:
             raise ValueError('response_mode must be either "streaming" or "blocking"')

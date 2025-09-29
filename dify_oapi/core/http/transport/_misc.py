@@ -1,4 +1,7 @@
 import math
+from typing import overload
+
+from httpx import Response
 
 from dify_oapi.core.const import APPLICATION_JSON, AUTHORIZATION, SLEEP_BASE_TIME, UTF_8
 from dify_oapi.core.json import JSON
@@ -41,22 +44,42 @@ def _merge_dicts(*dicts):
     return res
 
 
-def _unmarshaller(raw_resp: RawResponse, unmarshal_as: type[T]) -> T:
-    if raw_resp.status_code is None:
+@overload
+def _unmarshaller(unmarshal_as: type[T], /, *, raw_resp: RawResponse) -> T: ...
+
+
+@overload
+def _unmarshaller(unmarshal_as: type[T], /, *, http_resp: Response) -> T: ...
+
+
+def _unmarshaller(
+    unmarshal_as: type[T], /, *, raw_resp: RawResponse | None = None, http_resp: Response | None = None
+) -> T:
+    if raw_resp is not None:
+        raw_resp_ensured = raw_resp
+    else:
+        if http_resp is None:
+            raise RuntimeError("raw_resp is required")
+        raw_resp_ensured = RawResponse(
+            status_code=http_resp.status_code,
+            headers=dict(http_resp.headers),
+            content=http_resp.content,
+        )
+    if raw_resp_ensured.status_code is None:
         raise RuntimeError("status_code is required")
-    if raw_resp.content is None:
+    if raw_resp_ensured.content is None:
         raise RuntimeError("status_code is required")
     resp = unmarshal_as()
-    if raw_resp.content_type is not None and raw_resp.content_type.startswith(APPLICATION_JSON):
-        content = str(raw_resp.content, UTF_8).strip()
+    if raw_resp_ensured.content_type is not None and raw_resp_ensured.content_type.startswith(APPLICATION_JSON):
+        content = str(raw_resp_ensured.content, UTF_8).strip()
         if content != "" and content != "204":
             try:
                 resp = JSON.unmarshal(content, unmarshal_as)
             except Exception as e:
                 logger.error(f"Failed to unmarshal to {unmarshal_as} from {content}")
                 raise e
-    resp.raw = raw_resp
-    if raw_resp.status_code < 200 or raw_resp.status_code >= 300:
+    resp.raw = raw_resp_ensured
+    if raw_resp_ensured.status_code < 200 or raw_resp_ensured.status_code >= 300:
         if resp.code is None:
             resp.code = "error"
     return resp

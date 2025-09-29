@@ -9,7 +9,7 @@ class RawResponse(BaseModel):
     content: bytes | None = None
 
     def set_content_type(self, content_type: str) -> None:
-        self.headers[CONTENT_TYPE] = content_type
+        self.headers[CONTENT_TYPE.lower()] = content_type
 
     @property
     def content_type(self) -> str | None:

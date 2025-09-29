@@ -1,7 +1,7 @@
 import json
 import time
 from collections.abc import Generator
-from typing import Literal, overload
+from typing import ContextManager, Literal, overload
 
 import backoff
 import httpx
@@ -13,7 +13,6 @@ from dify_oapi.core.log import logger
 from dify_oapi.core.model.base_request import BaseRequest
 from dify_oapi.core.model.base_response import BaseResponse
 from dify_oapi.core.model.config import Config
-from dify_oapi.core.model.raw_response import RawResponse
 from dify_oapi.core.model.request_option import RequestOption
 from dify_oapi.core.type import T
 
@@ -32,6 +31,17 @@ class Transport:
         stream: Literal[True],
         option: RequestOption | None,
     ) -> Generator[bytes, None, None]: ...
+
+    @staticmethod
+    @overload
+    def execute(
+        conf: Config,
+        req: BaseRequest,
+        *,
+        stream: Literal[True],
+        option: RequestOption | None,
+        return_raw_response: Literal[True],
+    ) -> ContextManager[Response]: ...
 
     @staticmethod
     @overload
@@ -59,6 +69,7 @@ class Transport:
         stream: bool = False,
         unmarshal_as: type[T] | type[BaseResponse] | None = None,
         option: RequestOption | None = None,
+        return_raw_response: bool = False,
     ):
         if unmarshal_as is None:
             unmarshal_as = BaseResponse
@@ -90,13 +101,25 @@ class Transport:
             http_method=req.http_method,
         )
         if stream:
+            if return_raw_response:
+                return _open_stream_response(conf, request_context)
             return _stream_generator(conf, request_context)
         response = _block_generator(conf, request_context)
-        raw_resp = RawResponse()
-        raw_resp.status_code = response.status_code
-        raw_resp.headers = dict(response.headers)
-        raw_resp.content = response.content
-        return _unmarshaller(raw_resp, unmarshal_as)
+        return _unmarshaller(unmarshal_as, http_resp=response)
+
+
+def _open_stream_response(conf: Config, ctx: RequestContext, /) -> ContextManager[Response]:
+    stream_ctx = httpx.stream(
+        ctx.http_method.name,
+        ctx.url,
+        headers=ctx.headers,
+        params=tuple(ctx.req.queries),
+        json=ctx.json_,
+        data=ctx.data,
+        files=ctx.files,
+        timeout=conf.timeout,
+    )
+    return stream_ctx
 
 
 def _stream_generator(conf: Config, ctx: RequestContext, /) -> Generator[bytes, None, None]:

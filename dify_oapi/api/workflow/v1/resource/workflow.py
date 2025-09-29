@@ -1,5 +1,10 @@
+import json
 from collections.abc import AsyncGenerator, Generator
 from typing import Literal, overload
+
+from core.const import APPLICATION_JSON
+from core.http.transport._misc import _unmarshaller
+from core.model.raw_response import RawResponse
 
 from dify_oapi.core.http.transport import ATransport, Transport
 from dify_oapi.core.model.config import Config
@@ -33,21 +38,76 @@ class Workflow:
         request: RunWorkflowRequest,
         option: RequestOption | None,
         stream: Literal[False],
+        *,
+        block_via_stream: bool = False,
     ) -> RunWorkflowResponse: ...
 
     @overload
-    def run(self, request: RunWorkflowRequest, option: RequestOption | None) -> RunWorkflowResponse: ...
+    def run(
+        self,
+        request: RunWorkflowRequest,
+        option: RequestOption | None,
+        *,
+        block_via_stream: bool = False,
+    ) -> RunWorkflowResponse: ...
 
     def run(
         self,
         request: RunWorkflowRequest,
         option: RequestOption | None = None,
         stream: bool = False,
+        *,
+        block_via_stream: bool = False,
     ):
         if stream:
+            request.body["response_mode"] = "streaming"
             return Transport.execute(self.config, request, option=option, stream=True)
-        else:
+        if not block_via_stream:
+            request.body["response_mode"] = "blocking"
             return Transport.execute(self.config, request, unmarshal_as=RunWorkflowResponse, option=option)
+        request.body["response_mode"] = "streaming"
+        stream_ctx = Transport.execute(self.config, request, option=option, stream=True, return_raw_response=True)
+        with stream_ctx as response:
+            raw_response = RawResponse(
+                status_code=response.status_code,
+                headers=dict(response.headers),
+            )
+            if raw_response.status_code != 200:
+                raw_response.content = json.dumps(
+                    {
+                        "message": next(response.iter_bytes(4096), b"HTTP error").decode("utf-8", errors="ignore"),
+                    }
+                ).encode("utf-8")
+                return _unmarshaller(RunWorkflowResponse, raw_resp=raw_response)
+            for line in response.iter_lines():
+                if not line.startswith("data: "):
+                    continue
+                raw_data = line[6:]
+                try:
+                    data = dict(json.loads(raw_data))
+                except Exception as e:
+                    raw_response.status_code = 500
+                    raw_response.content = json.dumps({"message": f"Invalid JSON: {e or e!r}: {raw_data}"}).encode(
+                        "utf-8"
+                    )
+                    break
+                if data.get("event") == "workflow_finished":
+                    d = dict(data.get("data", {}))
+                    status = d.get("status", "<UNK>")
+                    if status == "succeeded":
+                        raw_response.content = raw_data.encode("utf-8")
+                        raw_response.set_content_type(APPLICATION_JSON)
+                    else:
+                        raw_response.status_code = 500
+                        raw_response.content = json.dumps(
+                            {"message": data.get("error", f"Invalid status: {data}")}
+                        ).encode("utf-8")
+                    break
+            else:
+                # 流结束也没拿到 workflow_finished
+                raw_response.status_code = 520
+                raw_response.content = json.dumps({"message": "Workflow did not finish properly"}).encode("utf-8")
+            return _unmarshaller(RunWorkflowResponse, raw_resp=raw_response)
 
     @overload
     async def arun(
