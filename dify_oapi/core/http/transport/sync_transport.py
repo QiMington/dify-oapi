@@ -1,6 +1,7 @@
 import json
 import time
 from collections.abc import Generator
+from contextlib import contextmanager
 from typing import ContextManager, Literal, overload
 
 import backoff
@@ -108,21 +109,8 @@ class Transport:
         return _unmarshaller(unmarshal_as, http_resp=response)
 
 
+@contextmanager
 def _open_stream_response(conf: Config, ctx: RequestContext, /) -> ContextManager[Response]:
-    stream_ctx = httpx.stream(
-        ctx.http_method.name,
-        ctx.url,
-        headers=ctx.headers,
-        params=tuple(ctx.req.queries),
-        json=ctx.json_,
-        data=ctx.data,
-        files=ctx.files,
-        timeout=conf.timeout,
-    )
-    return stream_ctx
-
-
-def _stream_generator(conf: Config, ctx: RequestContext, /) -> Generator[bytes, None, None]:
     details = {"tries": 1, "wait": 0.0, "exception": None}
     for attempt in range(1, conf.max_retry_count + 2):
         try:
@@ -135,22 +123,8 @@ def _stream_generator(conf: Config, ctx: RequestContext, /) -> Generator[bytes, 
                 data=ctx.data,
                 files=ctx.files,
                 timeout=conf.timeout,
-            ) as sync_response:
-                if sync_response.status_code != 200:
-                    try:
-                        error_detail = sync_response.read()
-                        error_message = error_detail.decode("utf-8", errors="ignore")
-                    except Exception:
-                        error_message = f"Error response with status code {sync_response.status_code}"
-                    error_message = error_message.strip()
-                    logger.warning(f"Streaming request failed: {sync_response.status_code}, detail: {error_message}")
-                    yield f"data: [ERROR] {error_message}\n\n".encode()
-                else:
-                    try:
-                        yield from sync_response.iter_bytes()
-                    except Exception as chunk_e:
-                        logger.exception("Streaming failed during chunk reading")
-                        yield f"data: [ERROR] Stream interrupted: {str(chunk_e)}\n\n".encode()
+            ) as response:
+                yield response
                 log_success(ctx)(details)
                 return
         except httpx.RequestError as e:
@@ -162,6 +136,23 @@ def _stream_generator(conf: Config, ctx: RequestContext, /) -> Generator[bytes, 
             else:
                 log_giveup(ctx)(details)
                 raise e
+
+
+def _stream_generator(conf: Config, ctx: RequestContext, /) -> Generator[bytes, None, None]:
+    with _open_stream_response(conf, ctx) as response:
+        if response.status_code != 200:
+            try:
+                error_message = response.read().decode("utf-8", errors="ignore")
+            except Exception:
+                error_message = f"Error response with status code {response.status_code}"
+            logger.warning(f"Streaming request failed: {response.status_code}, detail: {error_message}")
+            yield f"data: [ERROR] {error_message}\n\n".encode()
+            return
+        try:
+            yield from response.iter_bytes()
+        except Exception as chunk_e:
+            logger.exception("Streaming failed during chunk reading")
+            yield f"data: [ERROR] Stream interrupted: {str(chunk_e)}\n\n".encode()
 
 
 def _block_generator(conf: Config, ctx: RequestContext, /) -> Response:
@@ -178,7 +169,7 @@ def _block_generator(conf: Config, ctx: RequestContext, /) -> Response:
     )
     def inner_run():
         with httpx.Client() as client:
-            response = client.request(
+            return client.request(
                 ctx.http_method.name,
                 ctx.url,
                 headers=ctx.headers,
@@ -188,6 +179,5 @@ def _block_generator(conf: Config, ctx: RequestContext, /) -> Response:
                 files=ctx.files,
                 timeout=conf.timeout,
             )
-            return response
 
     return inner_run()
