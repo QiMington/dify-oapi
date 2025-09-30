@@ -1,3 +1,5 @@
+import json
+
 from pydantic import BaseModel, Field
 
 from dify_oapi.core.const import CONTENT_TYPE
@@ -9,7 +11,14 @@ class RawResponse(BaseModel):
     content: bytes | None = None
 
     def set_content_type(self, content_type: str) -> None:
-        self.headers[CONTENT_TYPE] = content_type
+        self.headers[CONTENT_TYPE.lower()] = content_type
+
+    def set_error_content(self, message: str | bytes):
+        if isinstance(message, bytes):
+            message_string = message.decode("utf-8", errors="ignore")
+        else:
+            message_string = message
+        self.content = json.dumps({"message": message_string}).encode("utf-8")
 
     @property
     def content_type(self) -> str | None:

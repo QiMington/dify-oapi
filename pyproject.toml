@@ -108,6 +108,7 @@ python = ">=3.10,<4.0"
 pydantic = ">=1.10,<3.0.0"
 httpx = ">=0.24,<1.0"
 backoff = "^2.2.1"
+typing-extensions = "^4.15.0"
 
 [tool.poetry.group.dev]
 optional = true
