@@ -1,6 +1,8 @@
 import os
 import time
 import unittest
+import uuid
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
@@ -108,7 +110,9 @@ class TestKnowledgeBaseClient(unittest.TestCase):
         self._test_014_delete_dataset()
 
     def _test_001_create_dataset(self):
-        req_body = CreateDatasetRequestBody.builder().name("test").build()
+        req_body = (
+            CreateDatasetRequestBody.builder().name(f"test-{datetime.now():%Y%m%d}-{uuid.uuid4().hex[:8]}").build()
+        )
         req = CreateDatasetRequest.builder().request_body(req_body).build()
         response = self.client.knowledge_base.v1.dataset.create(req, self.req_option)
         self.assertTrue(response.success, response.msg)
