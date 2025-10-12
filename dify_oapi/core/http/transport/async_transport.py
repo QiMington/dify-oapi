@@ -114,7 +114,7 @@ class ATransport:
 
 
 @asynccontextmanager
-async def _open_stream_response(conf: Config, ctx: RequestContext, /) -> AsyncContextManager[Response]:
+async def _open_stream_response(conf: Config, ctx: RequestContext, /) -> AsyncGenerator[Response, None]:
     details = {"tries": 1, "wait": 0.0, "exception": None}
     for attempt in range(1, conf.max_retry_count + 2):
         try:
